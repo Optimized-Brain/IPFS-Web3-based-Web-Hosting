@@ -30,6 +30,9 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { storeWebpageOnChain } from "@/utils/db/actions";
+import { createWebpage } from "@/utils/db/actions";
+
 export default function Home() {
   const features = [
     {
@@ -69,11 +72,44 @@ export default function Home() {
         "Utilize our decentralized content delivery network for faster and more reliable access.",
     },
   ];
+
+  const [domain, setDomain] = useState("");
+  const [content, setContent] = useState("");
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployedUrl, setDeployedUrl] = useState("");
+
+  const handleDeploy = async () => {
+    setIsDeploying(true);
+    try {
+      // Call the createWebpage function
+      const { txHash, cid } = await createWebpage("4ffdsfdf", domain, content); // Assuming userId 1 for now
+
+      // Set the deployed URL
+      setDeployedUrl(`https://http3.io/${domain}`);
+
+      console.log(
+        `Deployed successfully. Transaction hash: ${txHash}, CID: ${cid}`
+      );
+    } catch (error) {
+      console.error("Deployment failed:", error);
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <div className="min-h-screen p-8 pb-20 gap-16 sm:p-12 font-[family-name:var(--font-geist-sans)] bg-background text-foreground">
         <header className="mb-12 text-center">
-          
+          <Image
+            className="mx-auto text-white mb-4"
+            src="/svg/lock-square-rounded.svg"
+            alt="HTTP3 logo"
+            width={70}
+            height={38}
+            priority
+          />
           <h1 className="text-5xl max-w-3xl mx-auto font-bold mb-4">
             The Future of Web3 Hosting on{" "}
             <span className="text-primary">Smart Contracts</span>

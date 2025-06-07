@@ -11,6 +11,7 @@ import {
 import { Menu, LogIn, LogOut } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
+import { createOrUpdateUser } from "@/utils/db/actions";
 import {
   Dialog,
   DialogContent,
@@ -21,9 +22,15 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function Navbar() {
-  const { authenticated, user } = usePrivy();
+  const { login, logout, authenticated, user } = usePrivy();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showEmailConfirmModal, setShowEmailConfirmModal] = useState(false);
+
+  useEffect(() => {
+    if (authenticated && user) {
+      handleUserAuthenticated();
+    }
+  }, [authenticated, user]);
 
   useEffect(() => {
     const hasClosedModal = localStorage.getItem("emailConfirmModalClosed");
@@ -34,8 +41,35 @@ export default function Navbar() {
 
   console.log("all about the users", user);
 
+  const handleUserAuthenticated = async () => {
+    if (user && user.wallet?.address) {
+      try {
+        await createOrUpdateUser(
+          user.wallet.address,
+          user.email?.address || ""
+        );
+        const hasClosedModal = localStorage.getItem("emailConfirmModalClosed");
+        if (!hasClosedModal) {
+          setShowEmailConfirmModal(true);
+        }
+      } catch (error) {
+        console.error("Error updating user information:", error);
+      }
+    }
+  };
 
+  const handleAuth = () => {
+    if (authenticated) {
+      logout();
+    } else {
+      login();
+    }
+  };
 
+  const handleCloseModal = () => {
+    setShowEmailConfirmModal(false);
+    localStorage.setItem("emailConfirmModalClosed", "true");
+  };
 
   return (
     <>
@@ -63,7 +97,7 @@ export default function Navbar() {
           <Link href="/docs" className="text-foreground hover:text-primary">
             Docs
           </Link>
-          <Button variant="outline">
+          <Button onClick={handleAuth} variant="outline">
             {authenticated ? (
               <>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -125,7 +159,7 @@ export default function Navbar() {
               <Link href="/docs" className="text-foreground hover:text-primary">
                 Docs
               </Link>
-              <Button variant="outline" className="w-full">
+              <Button onClick={handleAuth} variant="outline" className="w-full">
                 {authenticated ? "Logout" : "Login"}
               </Button>
               {authenticated && (
@@ -190,7 +224,7 @@ export default function Navbar() {
             </p>
           </div>
           <div className="mt-6 flex justify-end">
-            <Button >Close</Button>
+            <Button onClick={handleCloseModal}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
